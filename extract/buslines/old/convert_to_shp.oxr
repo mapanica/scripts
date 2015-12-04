@@ -1,0 +1,23 @@
+
+setup :Shp do
+    polyline :bus_lines do
+        string :ID, 20
+    end 
+
+    point :bus_stops do
+        string :ID, 20
+        string :Name, 100
+        string :UIC, 20
+    end
+end
+
+nodes do
+    if public_transport=='stop_position'
+        :bus_stops << {:ID => id, :Name => name, :UIC => uic_ref}
+    end
+end
+
+ways do
+    :bus_lines  {:ID => 1}
+end
+
