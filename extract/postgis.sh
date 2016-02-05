@@ -11,8 +11,8 @@ function preparedb {
   psql -U postgres -h localhost -c "drop database osm_managua;"
   psql -U postgres -h localhost -c "create database osm_managua;"
   psql -U postgres -h localhost -d osm_managua -c "CREATE EXTENSION hstore;"
-  psql -U postgres -h localhost -d osm_managua -f /usr/share/postgresql/9.4/contrib/postgis-2.1/postgis.sql
-  psql -U postgres -h localhost -d osm_managua -f /usr/share/postgresql/9.4/contrib/postgis-2.1/spatial_ref_sys.sql
+  psql -U postgres -h localhost -d osm_managua -f /usr/share/postgresql/9.4/contrib/postgis-2.2/postgis.sql
+  psql -U postgres -h localhost -d osm_managua -f /usr/share/postgresql/9.4/contrib/postgis-2.2/spatial_ref_sys.sql
 }
 
 function import {

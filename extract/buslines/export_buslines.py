@@ -10,6 +10,7 @@ import db_queries
 import conversions
 import filehandler
 
+
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -29,6 +30,8 @@ for irtramma_relation in con.ExecuteSQL(sql):
     # Get data
     busline = db_queries.get_busline(relation_id);
     busstops = db_queries.get_busstops(relation_id);
+    busline_length = db_queries.get_length(relation_id);
+
 
     # Convert to GeoJson file
     #geojson = conversions.convert_geojson(relation_tags, busline, busstops);

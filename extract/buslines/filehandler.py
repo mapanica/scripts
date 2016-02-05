@@ -32,6 +32,7 @@ def write_json(busnumber, busline, busstops):
       foo = feat.GetGeometryRef();
       geometry = ogr.Geometry(ogr.wkbMultiLineString);
       geometry.AddGeometry(foo);
+
       geometry = geometry.SimplifyPreserveTopology(0.00002);
       # Use only simplified data, if we had an success
       if (geometry.IsEmpty()):
