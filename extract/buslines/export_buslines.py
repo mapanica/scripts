@@ -30,11 +30,14 @@ for irtramma_relation in con.ExecuteSQL(sql):
     # Get data
     busline = db_queries.get_busline(relation_id);
     busstops = db_queries.get_busstops(relation_id);
-    busline_length = db_queries.get_length(relation_id);
+    #busline_length = db_queries.get_length(relation_id);
 
+    logging.debug(relation_tags);
 
     # Convert to GeoJson file
     #geojson = conversions.convert_geojson(relation_tags, busline, busstops);
+
+
     filehandler.write_json(relation_tags['ref'], busline, busstops);
 
     # Convert to SHP file
