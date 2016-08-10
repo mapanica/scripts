@@ -44,14 +44,13 @@ for route_relation in con.ExecuteSQL(sql):
 
 
     #busline_length = db_queries.get_length(route_relation);
-
     logging.debug(routevariant_tags);
 
     # Convert to GeoJson file
     #geojson = conversions.convert_geojson(relation_tags, busline, busstops);
 
 
-    filehandler.write_json(routevariant_tags['ref'], busline, busstops);
+    filehandler.write_json(routevariant, routevariant_tags, busline, busstops);
 
     # Convert to SHP file
     #filehandler.write_shp(relation_tags['ref'], busline, busstops);

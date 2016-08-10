@@ -2,10 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import ogr, osr, os
+import db_queries
 import logging
+import simplejson, json
 
 
-def write_json(busnumber, busline, busstops):
+def write_json(relation_id, businfo, busline, busstops):
+
+    busnumber = businfo['ref'];
 
     # Define filename
     path = 'export/geojson/';
@@ -23,12 +27,14 @@ def write_json(busnumber, busline, busstops):
     datasource = driver.CreateDataSource(path + busnumber + "-" + route_direction + ".geojson"); #so there we will store our data
     layer = datasource.CreateLayer(busnumber + "-" + route_direction + ".geojson", spatialReference, ogr.wkbPoint); #this will create a corresponding layer for our data with given spatial information.
     layer_defn = layer.GetLayerDefn(); # gets parameters of the current shapefile
-    fd = ogr.FieldDefn('name', ogr.OFTString);
-    layer.CreateField(fd);
+    layer.CreateField(ogr.FieldDefn('name', ogr.OFTString));
+    layer.CreateField(ogr.FieldDefn('attributes'));
 
     # Adding rute element
     feat = busline.GetNextFeature();
     while feat is not None:
+
+      logging.debug(businfo['name']);
 
       # Simplifying the data
       foo = feat.GetGeometryRef();
@@ -43,11 +49,28 @@ def write_json(busnumber, busline, busstops):
       # Adding data
       featDef = ogr.Feature(layer_defn);
       featDef.SetGeometry(geometry);
-      #featDef.SetField('name', "bar");
+      featDef.SetField('name', businfo['name']);
+
+      # Adding attributes to bus route
+      attributes = {'ref': businfo['ref'], 'to': businfo['to'], 'from': businfo['from'], 'network': businfo['network']};
+      #businfo['opening_hours']);
+      routemaster = db_queries.get_routemaster(relation_id);
+      for rm in routemaster:
+          temp_tags = rm.GetField('tags');
+          routemaster_tags = dict(zip(temp_tags[0::2], temp_tags[1::2]));
+          try:
+              attributes['operator'] = routemaster_tags['operator'];
+          except KeyError:
+              logging.debug('No operator information found on route master')
+      featDef.SetField('attributes', simplejson.dumps(attributes));
+
+      # Create file
+
+
       layer.CreateFeature(featDef);
+
       feat.Destroy();
       feat = busline.GetNextFeature();
-    # Adding rute element
 
     for stop in busstops:
       # Adding data
