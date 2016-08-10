@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import ogr, osr, os
+import logging
+
 
 def write_json(busnumber, busline, busstops):
 
@@ -47,16 +49,13 @@ def write_json(busnumber, busline, busstops):
       feat = busline.GetNextFeature();
     # Adding rute element
 
-    stop = busstops.GetNextFeature();
-    while stop is not None:
+    for stop in busstops:
       # Adding data
       stopDef = ogr.Feature(layer_defn);
       stopDef.SetGeometry(stop.GetGeometryRef());
-      #print stop.DumpReadable("name");
       stopDef.SetField('name', stop.GetField('name'));
       layer.CreateFeature(stopDef);
       stop.Destroy();
-      stop = busstops.GetNextFeature();
     return;
 
 
