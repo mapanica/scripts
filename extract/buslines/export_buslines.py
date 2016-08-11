@@ -34,17 +34,29 @@ for route_relation in con.ExecuteSQL(sql):
 
     # Get data about stop areas
     busstop = busstops_raw.GetNextFeature();
+    stopAttributes = dict();
     while busstop is not None:
         stoparea = db_queries.get_stoparea(busstop.GetField('osm_id'));
         for sa in stoparea:
-            stoparea_tags = sa.GetField('tags');
-            busstop.SetField('name', stoparea_tags[1]);
+            stoparea_tags_raw = sa.GetField('tags');
+            stoparea_tags = dict(zip(stoparea_tags_raw[0::2], stoparea_tags_raw[1::2]))
+            try:
+                busstop.SetField('name', stoparea_tags['name']);
+            except KeyError:
+                busstop.SetField('name', '');
+
+            try:
+                busstop.SetField('official_status', stoparea_tags['official_status']);
+                print stoparea_tags['official_status'];
+            except KeyError:
+                e = ('No information found about official status on stop area');
+
         busstops.append(busstop);
         busstop = busstops_raw.GetNextFeature();
 
 
     #busline_length = db_queries.get_length(route_relation);
-    logging.debug(routevariant_tags);
+    # logging.debug(routevariant_tags);
 
     # Convert to GeoJson file
     #geojson = conversions.convert_geojson(relation_tags, busline, busstops);

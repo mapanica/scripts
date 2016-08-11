@@ -62,21 +62,28 @@ def write_json(relation_id, businfo, busline, busstops):
               attributes['operator'] = routemaster_tags['operator'];
           except KeyError:
               logging.debug('No operator information found on route master')
+
       featDef.SetField('attributes', simplejson.dumps(attributes));
 
       # Create file
-
-
       layer.CreateFeature(featDef);
-
       feat.Destroy();
       feat = busline.GetNextFeature();
 
     for stop in busstops:
+      attributes.clear();
       # Adding data
       stopDef = ogr.Feature(layer_defn);
       stopDef.SetGeometry(stop.GetGeometryRef());
       stopDef.SetField('name', stop.GetField('name'));
+      try:
+          attributes['official_status'] = stop.GetField('official_status');
+      except KeyError:
+          e = ('No information found about official status on stop area');
+
+      if not (len(attributes) < 0):
+          stopDef.SetField('attributes', simplejson.dumps(attributes));
+
       layer.CreateFeature(stopDef);
       stop.Destroy();
     return;
