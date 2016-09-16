@@ -18,10 +18,11 @@ echo ""
 
 # Remove old data
 rm -rf export/geojson/*
+rm -rf export/shp/*
+
 
 # Extract seperate osm xml files for each route
 python buslines/export_buslines.py
 
 echo "--- done  ---"
 exit
-
