@@ -5,36 +5,27 @@ import ogr, osr, os
 import db_queries
 import logging
 import simplejson, json
+import sys
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
-
-def write_json(relation_id, businfo, busline, busstops):
-
-    busnumber = businfo['ref'];
-
-    # Define filename
-    path = 'export/geojson/';
-    if os.path.isfile(path + busnumber + "-1" + ".geojson"):
-        route_direction = "2";
-    else:
-        route_direction = "1";
+def write_json(route, stops):
 
     # File definitions
-    spatialReference = osr.SpatialReference(); #will create a spatial reference locally to tell the system what the reference will be
-    spatialReference.ImportFromProj4('+proj=utm +zone=48N +ellps=WGS84 +datum=WGS84 +units=m'); #here we define this reference to be utm Zone 48N with wgs84...
-    driver = ogr.GetDriverByName('GeoJSON'); # will select the driver foir our shp-file creation.
+    spatialReference = osr.SpatialReference();
+    spatialReference.ImportFromProj4('+proj=utm +zone=48N +ellps=WGS84 +datum=WGS84 +units=m');
+    driver = ogr.GetDriverByName('GeoJSON');
 
     # Create file with geo information
-    datasource = driver.CreateDataSource(path + busnumber + "-" + route_direction + ".geojson"); #so there we will store our data
-    layer = datasource.CreateLayer(busnumber + "-" + route_direction + ".geojson", spatialReference, ogr.wkbPoint); #this will create a corresponding layer for our data with given spatial information.
-    layer_defn = layer.GetLayerDefn(); # gets parameters of the current shapefile
+    datasource = driver.CreateDataSource(path + route['id'] + ".geojson");
+    layer = datasource.CreateLayer(route['id'] + ".geojson", spatialReference, ogr.wkbPoint);
+    layer_defn = layer.GetLayerDefn();
     layer.CreateField(ogr.FieldDefn('name', ogr.OFTString));
     layer.CreateField(ogr.FieldDefn('attributes'));
 
     # Adding rute element
-    feat = busline.GetNextFeature();
+    feat = route['busline'].GetNextFeature();
     while feat is not None:
-
-      logging.debug(businfo['name']);
 
       # Simplifying the data
       foo = feat.GetGeometryRef();
@@ -49,12 +40,11 @@ def write_json(relation_id, businfo, busline, busstops):
       # Adding data
       featDef = ogr.Feature(layer_defn);
       featDef.SetGeometry(geometry);
-      featDef.SetField('name', businfo['name']);
+      featDef.SetField('name', route['name']);
 
       # Adding attributes to bus route
-      attributes = {'ref': businfo['ref'], 'to': businfo['to'], 'from': businfo['from'], 'network': businfo['network']};
-      #businfo['opening_hours']);
-      routemaster = db_queries.get_routemaster(relation_id);
+      attributes = {'ref': route['ref'], 'to': route['to'], 'from': route['from'], 'network': route['network'], 'operation': route['opening_hours']};
+      routemaster = db_queries.get_routemaster(route['relation_id']);
       for rm in routemaster:
           temp_tags = rm.GetField('tags');
           routemaster_tags = dict(zip(temp_tags[0::2], temp_tags[1::2]));
@@ -68,7 +58,7 @@ def write_json(relation_id, businfo, busline, busstops):
       # Create file
       layer.CreateFeature(featDef);
       feat.Destroy();
-      feat = busline.GetNextFeature();
+      feat = route['busline'].GetNextFeature();
 
     for stop in busstops:
       attributes.clear();
@@ -89,51 +79,73 @@ def write_json(relation_id, businfo, busline, busstops):
     return;
 
 
-def write_shp(busnumber, busline, busstops):
+
+def write_routes_shp(routes):
 
     # Define filename input
     path = 'export/shp/';
-    if os.path.isfile(path + busnumber + "-1" + "-stops.shp"):
-        route_direction = "2";
-    else:
-        route_direction = "1";
 
     # Shape file definitions
-    spatialReference = osr.SpatialReference(); #will create a spatial reference locally to tell the system what the reference will be
-    spatialReference.ImportFromProj4('+proj=utm +zone=48N +ellps=WGS84 +datum=WGS84 +units=m'); #here we define this reference to be utm Zone 48N with wgs84...
-    driver = ogr.GetDriverByName('ESRI Shapefile'); # will select the driver foir our shp-file creation.
+    spatialReference = osr.SpatialReference();
+    spatialReference.ImportFromProj4('+proj=utm +zone=48N +ellps=WGS84 +datum=WGS84 +units=m');
+    driver = ogr.GetDriverByName('ESRI Shapefile');
+
+    # Create shapefile for routes
+    shapeData = driver.CreateDataSource(path);
+    layer = shapeData.CreateLayer("mapanica-routes", spatialReference, ogr.wkbLineString);
+    layer_defn = layer.GetLayerDefn();
+    layer.CreateField(ogr.FieldDefn('ref', ogr.OFTString));
+    layer.CreateField(ogr.FieldDefn('name', ogr.OFTString));
+    layer.CreateField(ogr.FieldDefn('origin', ogr.OFTString));
+    layer.CreateField(ogr.FieldDefn('dest', ogr.OFTString));
+    layer.CreateField(ogr.FieldDefn('first', ogr.OFTString));
+    layer.CreateField(ogr.FieldDefn('last', ogr.OFTString));
+    layer.CreateField(ogr.FieldDefn('duration', ogr.OFTString));
+
+    for route in routes:
+
+      # Adding data
+      featDef = ogr.Feature(layer_defn);
+      featDef.SetGeometry(route['busline'].GetGeometryRef());
+      featDef.SetField('ref', route['ref']);
+      featDef.SetField('name', route['name']);
+      featDef.SetField('origin', route['from']);
+      featDef.SetField('dest', route['to']);
+      featDef.SetField('first', route['opening_hours']);
+      featDef.SetField('last', route['opening_hours']);
+      featDef.SetField('duration', route['duration']);
+
+      # Create file
+      layer.CreateFeature(featDef);
+
+    return;
+
+
+
+def write_stops_shp(stops):
+
+    # Define filename input
+    path = 'export/shp/';
+
+    # Shape file definitions
+    spatialReference = osr.SpatialReference();
+    spatialReference.ImportFromProj4('+proj=utm +zone=48N +ellps=WGS84 +datum=WGS84 +units=m ');
+    driver = ogr.GetDriverByName('ESRI Shapefile');
 
     # Create shapefile for stops
-    shapeData = driver.CreateDataSource(path); #so there we will store our data
-    layer = shapeData.CreateLayer(busnumber + "-" + route_direction + "-stops", spatialReference, ogr.wkbPoint); #this will create a corresponding layer for our data with given spatial information.
-    layer_defn = layer.GetLayerDefn(); # gets parameters of the current shapefile
-    fd = ogr.FieldDefn('name',ogr.OFTString);
-    layer.CreateField(fd);
+    shapeData = driver.CreateDataSource(path);
+    layer = shapeData.CreateLayer("mapanica-stops", spatialReference, ogr.wkbPoint);
+    layer_defn = layer.GetLayerDefn();
+    layer.CreateField(ogr.FieldDefn('name', ogr.OFTString));
 
-    # Adding elements
-    feat = busstops.GetNextFeature();
-    while feat is not None:
+    for stop in stops:
+
+      # Adding data
       featDef = ogr.Feature(layer_defn);
-      featDef.SetGeometry(feat.GetGeometryRef());
-      featDef.SetField('name',feat.name);
+      featDef.SetGeometry(stop.GetGeometryRef());
+      featDef.SetField('name', stop.GetField('name'));
+
+      # Create file
       layer.CreateFeature(featDef);
-      feat.Destroy();
-      feat = busstops.GetNextFeature();
 
-    # Create shapefile for route
-    shapeData = driver.CreateDataSource(path); #so there we will store our data
-    layer = shapeData.CreateLayer(busnumber + "-" + route_direction + "-route", spatialReference, ogr.wkbLineString); #this will create a corresponding layer for our data with given spatial information.
-    layer_defn = layer.GetLayerDefn(); # gets parameters of the current shapefile
-
-    # Adding elements
-    feat = busline.GetNextFeature();
-    while feat is not None:
-      featDef = ogr.Feature(layer_defn);
-      featDef.SetGeometry(feat.GetGeometryRef());
-      layer.CreateFeature(featDef);
-      feat.Destroy();
-      feat = busline.GetNextFeature();
-
-
-    shapeData.Destroy(); #lets close the shapefile
     return;

@@ -1,0 +1,35 @@
+{
+	"agency_name":"Rutas Managua y Ciudad Sanindo (MapaNica)",
+	"agency_url":"http://rutas.mapanica.net/",
+	"agency_timezone":"America/Managua",
+	"gtfs_mode":3,
+	"speed": 5.0,
+	"stops":{
+    "strategy":"shapefile",
+    "filename":"data/mapanica-stops.shp",
+    "threshold":0.0002,
+  },
+	"route_id_prop_name":"ref",
+	"route_name_prop_name":"name",
+	"service_windows":[
+		["wd-6-7",6,7],
+		["wd-7-9",7,9],
+		["wd-9-16",9,16],
+		["wd-16-18",16,18],
+		["wd-18-19",18,19],
+		["wd-19-20",19,20],
+		["wd-20-21",20,21],
+	],
+	"csv_join":{
+	  "filename":"data/mapanica-freqs.csv",
+	  "csv_col":"ref",
+	  "shp_col":"ref",
+},
+	"start_date":"20160101",
+	"end_date":"20180101",
+	"use_periods":false,
+	"wait_factor": 2.5,
+	"service_level": 0,
+	"is_bidirectional":false,
+	"exact":true
+}
