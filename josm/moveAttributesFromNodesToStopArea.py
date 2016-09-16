@@ -4,17 +4,6 @@
 '''
 This code is released under the
 WTFPL – Do What the Fuck You Want to Public License.
-
-
-#from stop position search for nearest platform in this relation (not too far away)
-
-
-1 .loop through stop_positions which are not in a stop_area relation, yet.
-2. search for the closest platform in a route relation
-3. make sure it's not too far away (start small and check)
-4. define it's name (from stop_position or platform, store the other one and additional tags)
-5. create new relation with both elements, correct roles and the tags
-
 '''
 from javax.swing import JOptionPane
 from org.openstreetmap.josm import Main

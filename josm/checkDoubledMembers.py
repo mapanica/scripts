@@ -1,5 +1,3 @@
-
-
 #!/bin/jython
 '''
 This code is released under the
@@ -17,6 +15,7 @@ import org.openstreetmap.josm.data.osm.TagCollection as TagCollection
 import org.openstreetmap.josm.data.osm.DataSet as DataSet
 import org.openstreetmap.josm.data.osm.RelationMember as RelationMember
 import org.openstreetmap.josm.actions.search.SearchAction as SearchAction
+import org.openstreetmap.josm.actions.mapmode.DeleteAction as DeleteAction
 import re, time, sys
 import codecs
 
@@ -29,26 +28,24 @@ def getMapView():
 mv = getMapView()
 if mv and mv.editLayer and mv.editLayer.data:
 
+    relations = dict();
+    i = 0;
+
+    print "Start";
     # Loop through all stop area relations
     for relation in mv.editLayer.data.getRelations():
 
-        platformData = None;
-        stopPositionData = None;
-        stopAreaData = None;
-        finalData = None;
-
         if (relation.get('public_transport') == 'stop_area'):
 
-            #print relation.getId()
+            members = dict();
+            i = 0;
 
-            # If stop area alreay has a value
-            if not (relation.get('name') == None):
-                for member in relation.getMembers():
-                    if member.isNode():
-                        memberPrimitive = member.getNode()
-                    elif member.isWay():
-                        memberPrimitive = member.getWay()
-
-                    # Get platform
-                    if memberPrimitive.get('public_transport') == 'platform':
-                        memberPrimitive.put('name', relation.get('name'));
+            # Get one node of each relations
+            for member in relation.getMembers():
+                memberId = member.getUniqueId();
+                print memberId;
+                if memberId in members.keys():
+                    relation.removeMember(i);
+                else:
+                    members[memberId] = memberId;
+                i = i + 1;

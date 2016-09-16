@@ -17,6 +17,7 @@ import org.openstreetmap.josm.data.osm.TagCollection as TagCollection
 import org.openstreetmap.josm.data.osm.DataSet as DataSet
 import org.openstreetmap.josm.data.osm.RelationMember as RelationMember
 import org.openstreetmap.josm.actions.search.SearchAction as SearchAction
+import org.openstreetmap.josm.actions.mapmode.DeleteAction as DeleteAction
 import re, time, sys
 import codecs
 
@@ -29,26 +30,44 @@ def getMapView():
 mv = getMapView()
 if mv and mv.editLayer and mv.editLayer.data:
 
+    relations = dict();
+    i = 0;
+
+    print "Start";
     # Loop through all stop area relations
     for relation in mv.editLayer.data.getRelations():
 
-        platformData = None;
-        stopPositionData = None;
-        stopAreaData = None;
-        finalData = None;
-
         if (relation.get('public_transport') == 'stop_area'):
 
-            #print relation.getId()
+            name = relation.get('name');
 
-            # If stop area alreay has a value
-            if not (relation.get('name') == None):
+            if name not in relations.keys():
+                relations[name] = relation;
+
+            elif isinstance(name, basestring):
+
+                # Get one node of each relations
                 for member in relation.getMembers():
                     if member.isNode():
-                        memberPrimitive = member.getNode()
-                    elif member.isWay():
-                        memberPrimitive = member.getWay()
+                        firstNode = member.getNode();
 
-                    # Get platform
-                    if memberPrimitive.get('public_transport') == 'platform':
-                        memberPrimitive.put('name', relation.get('name'));
+                for member in relations[name].getMembers():
+                    if member.isNode():
+                        secondNode = member.getNode();
+
+                # Compare distance between nodes from two relations
+                distance = firstNode.getCoor().distanceSq(secondNode.getCoor())
+
+                # If they are close enough, we assume to have two stop areas we can merge
+                if distance < 0.00003:
+
+                    # Add members from one relation to the other
+                    for member in relations[name].getMembers():
+                        relation.addMember(member);
+
+                    # Delete the other relation
+                    print 'Relation unite! ' + name;
+                    DeleteAction.deleteRelation(Main.getLayerManager().getEditLayer(), relations[name]);
+                    i = i +1;
+
+    print i;
